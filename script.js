@@ -92,13 +92,53 @@ async function fetchPNR() {
     // ======================
     // 👤 PASSENGER INFO
     // ======================
-    document.getElementById("passengerInfo").innerHTML = `
-      <h3>👤 Passenger</h3>
-      <p>Booking: ${p.bookingStatus || "-"}</p>
-      <p>Current: ${p.currentStatus || "-"}</p>
-      <p>Coach: ${p.coach || "-"}</p>
-      <p>Berth: ${p.berth || "-"}</p>
+    // ======================
+// 👤 PASSENGER INFO (MULTIPLE)
+// ======================
+
+let passengers = d.passengers;
+
+let passengerHTML = "<h3>👤 Passenger</h3>";
+
+if (passengers.length === 1) {
+  let p = passengers[0];
+
+  passengerHTML += `
+    <p>Booking: ${p.bookingStatus}</p>
+    <p>Current: ${p.currentStatus}</p>
+    <p>Coach: ${p.coach || "-"}</p>
+    <p>Berth: ${p.berth || "-"}</p>
+  `;
+} else {
+  // Multiple passengers
+  let allSameCoach = true;
+  let firstCoach = passengers[0].coach;
+
+  passengers.forEach(p => {
+    if (p.coach !== firstCoach) {
+      allSameCoach = false;
+    }
+  });
+
+  if (allSameCoach) {
+    // ✅ SAME COACH → COMBINED FORMAT
+    let berths = passengers.map(p => p.berth).join(" / ");
+    let status = passengers[0].currentStatus.split(" ")[0];
+
+    passengerHTML += `
+      <p><b>${status} ${firstCoach}</b> → ${berths}</p>
     `;
+  } else {
+    // ❌ DIFFERENT COACH → SEPARATE FORMAT
+    passengers.forEach((p, index) => {
+      passengerHTML += `
+        <p>P${index + 1}: ${p.currentStatus} (${p.coach}-${p.berth})</p>
+      `;
+    });
+  }
+}
+
+document.getElementById("passengerInfo").innerHTML = passengerHTML;
 
     // ======================
     // 📊 EXTRA INFO
