@@ -83,7 +83,7 @@ async function fetchPNR() {
     // =======================
     document.getElementById("extraInfo").innerHTML = `
       <h3>📊 Extra Info</h3>
-      <p>Fare: ₹${d.bookingFare || "-"}</p>
+      <p>Fare: ₹${d.bookingFare}</p>
       <p>Chart Prepared: ${d.chartPrepared ? "Yes" : "No"}</p>
       <p>Train Status: ${d.trainStatus}</p>
       <p>Cancelled: ${d.trainCancelled ? "Yes" : "No"}</p>
