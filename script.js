@@ -26,10 +26,8 @@ async function fetchPNR() {
     }
 let d = data.data;
 
-// 👇 ADD THESE LINES HERE
-console.log("FULL DATA:", d);
 console.log("SOURCE:", d.source);
-console.log("DESTINATION:", d.destination);
+console.log("DEST:", d.destination);
     let d = data.data;
     let p = d.passengers[0];
 
