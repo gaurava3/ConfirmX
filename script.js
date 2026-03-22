@@ -7,7 +7,7 @@ async function fetchPNR() {
   }
 
   try {
-    let response = await fetch(`YOUR_API_URL_HERE?pnr=${pnr}`, {
+    let response = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
       method: "GET",
       headers: {
         "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
