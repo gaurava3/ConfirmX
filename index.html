@@ -6,46 +6,20 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<input type="text" id="pnr" placeholder="Enter PNR Number">
-<button onclick="fetchPNR()">Fetch Details</button>
-  <div class="container">
-    <h1>ConfirmX</h1>
-    <p>Check your ticket confirmation chances</p>
 
-    <input type="number" id="wl" placeholder="Enter WL Number">
+<div class="container">
+  <h1>ConfirmX</h1>
+  <p>Enter your PNR to check confirmation chances</p>
 
-    <select id="class">
-      <option value="1.2">Sleeper</option>
-      <option value="1.0">3AC</option>
-      <option value="0.8">2AC</option>
-      <option value="0.5">1AC</option>
-    </select>
+  <input type="text" id="pnr" placeholder="Enter PNR Number">
+  <button onclick="fetchPNR()">Check Now</button>
 
-    <select id="quota">
-      <option value="GNWL">GNWL</option>
-      <option value="PQWL">PQWL</option>
-      <option value="RLWL">RLWL</option>
-    </select>
-
-    <select id="festival">
-      <option value="1">Normal</option>
-      <option value="0.85">Weekend</option>
-      <option value="0.75">Holiday</option>
-      <option value="0.55">Festival</option>
-    </select>
-
-    <select id="days">
-      <option value="1.2">7+ Days</option>
-      <option value="1.0">4–7 Days</option>
-      <option value="0.7">2–3 Days</option>
-      <option value="0.5">0–1 Day</option>
-    </select>
-
-    <button onclick="calculate()">Check Probability</button>
-
+  <div id="resultBox">
     <h2 id="result"></h2>
+    <p id="message"></p>
   </div>
+</div>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
