@@ -2,25 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ConfirmX - Ticket Predictor</title>
+  <title>ConfirmX</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
   <h1>ConfirmX</h1>
-  <p>Enter your PNR to check confirmation chances</p>
+  <p>Check your ticket confirmation chances</p>
 
-  <!-- ✅ PNR INPUT -->
   <input type="text" id="pnr" placeholder="Enter PNR Number">
-
-  <!-- ✅ BUTTON -->
   <button onclick="fetchPNR()">Check Now</button>
 
-  <!-- ✅ RESULT AREA (IMPORTANT FOR JS) -->
+  <!-- RESULT -->
   <div id="resultBox">
+
     <h2 id="result"></h2>
     <p id="message"></p>
+
+    <!-- TRAIN INFO -->
+    <div class="card" id="trainInfo"></div>
+
+    <!-- PASSENGER INFO -->
+    <div class="card" id="passengerInfo"></div>
+
+    <!-- EXTRA INFO -->
+    <div class="card" id="extraInfo"></div>
+
   </div>
 </div>
 
