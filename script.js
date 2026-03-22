@@ -58,14 +58,14 @@ async function fetchPNR() {
     // 🚆 TRAIN INFO
     // =======================
     document.getElementById("trainInfo").innerHTML = `
-      <h3>🚆 Train Info</h3>
-      <p><b>${d.trainName}</b> (${d.trainNumber})</p>
-      <p>${d.sourceStation} ➝ ${d.destinationStation}</p>
-      <p>Departure: ${d.departureTime}</p>
-      <p>Arrival: ${d.arrivalTime}</p>
-      <p>Duration: ${d.duration}</p>
-      <p>Class: ${d.class}</p>
-    `;
+  <h3>🚆 Train Info</h3>
+  <p><b>${d.trainName}</b> (${d.trainNumber})</p>
+  <p>${d.source} ➝ ${d.destination}</p>
+  <p>Departure: ${d.departureTime}</p>
+  <p>Arrival: ${d.arrivalTime}</p>
+  <p>Duration: ${d.duration}</p>
+  <p>Class: ${d.class}</p>
+`;
 
     // =======================
     // 👤 PASSENGER INFO
