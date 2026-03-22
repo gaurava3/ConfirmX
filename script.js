@@ -26,8 +26,7 @@ async function fetchPNR() {
     }
 let d = data.data;
 
-console.log("SOURCE:", d.source);
-console.log("DEST:", d.destination);
+
     let d = data.data;
     let p = d.passengers[0];
 
@@ -60,7 +59,7 @@ console.log("DEST:", d.destination);
     // =======================
     // 🚆 TRAIN INFO
     // =======================
-    document.getElementById("trainInfo").innerHTML = `
+   document.getElementById("trainInfo").innerHTML = `
   <h3>🚆 Train Info</h3>
   <p><b>${d.trainName}</b> (${d.trainNumber})</p>
   <p>${d.source} ➝ ${d.destination}</p>
