@@ -81,16 +81,19 @@ async function fetchPNR() {
     // =======================
     // 📊 EXTRA INFO
     // =======================
-    document.getElementById("extraInfo").innerHTML = `
-      <h3>📊 Extra Info</h3>
-      <p>Fare: ₹${d.bookingFare}</p>
-      <p>Chart Prepared: ${d.chartPrepared ? "Yes" : "No"}</p>
-      <p>Train Status: ${d.trainStatus}</p>
-      <p>Cancelled: ${d.trainCancelled ? "Yes" : "No"}</p>
-      <p>Food Rating: ${d.foodRating || "-"}</p>
-      <p>Cleanliness: ${d.cleanlinessRating || "-"}</p>
-      <p>Pantry: ${d.hasPantry ? "Yes" : "No"}</p>
-    `;
+   document.getElementById("extraInfo").innerHTML = `
+  <h3>📊 Extra Info</h3>
+  <p>Fare: ₹${d.fare?.ticketFare || "-"}</p>
+  <p>Chart Prepared: ${d.chartPrepared ? "Yes" : "No"}</p>
+  <p>Train Status: ${d.trainStatus}</p>
+  <p>Cancelled: ${d.isCancelled ? "Yes" : "No"}</p>
+
+  <p>Food Rating: ${d.ratings?.food || "-"}</p>
+  <p>Cleanliness: ${d.ratings?.cleanliness || "-"}</p>
+  <p>Overall Rating: ${d.ratings?.overall || "-"}</p>
+
+  <p>Pantry: ${d.hasPantry ? "Yes" : "No"}</p>
+`;
 
   } catch (err) {
     console.error(err);
