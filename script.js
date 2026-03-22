@@ -1,3 +1,40 @@
+async function fetchPNR() {
+  let pnr = document.getElementById("pnr").value;
+
+  if (!pnr) {
+    alert("Enter PNR first");
+    return;
+  }
+
+  try {
+    let response = await fetch(`YOUR_API_URL_HERE?pnr=${pnr}`, {
+      method: "GET",
+      headers: {
+        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
+        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
+      }
+    });
+
+    let data = await response.json();
+
+    console.log(data);
+
+    // 👇 Adjust this based on your API response
+    let wl = data.wl || 20;
+    let classType = data.class || "3AC";
+    let quota = data.quota || "GNWL";
+
+    // Auto-fill UI
+    document.getElementById("wl").value = wl;
+
+    // Run your calculation
+    calculate();
+
+  } catch (error) {
+    console.error(error);
+    alert("Failed to fetch PNR data");
+  }
+}
 function calculate() {
   let wl = parseInt(document.getElementById("wl").value);
   let classFactor = parseFloat(document.getElementById("class").value);
