@@ -7,35 +7,32 @@
 </head>
 <body>
 
-<div class="navbar">
+<div class="container">
   <h1>ConfirmX</h1>
-  <div class="menu">
-    <button onclick="showSection('pnrSection')">PNR Check</button>
-    <button onclick="showSection('trainSection')">Train Search</button>
-  </div>
-</div>
+  <p>Check your ticket confirmation chances</p>
 
-<!-- PNR SECTION -->
-<div id="pnrSection" class="section active">
-  <h2>Check PNR Status</h2>
-  <input type="text" id="pnrInput" placeholder="Enter PNR">
+  <!-- INPUT -->
+  <input type="text" id="pnr" placeholder="Enter PNR Number">
+
+  <!-- BUTTON -->
   <button onclick="fetchPNR()">Check Now</button>
 
-  <div id="pnrResult"></div>
-</div>
+  <!-- RESULT -->
+  <div id="resultBox">
 
-<!-- TRAIN SECTION -->
-<div id="trainSection" class="section">
-  <h2>Check Seat Availability</h2>
+    <h2 id="result"></h2>
+    <p id="message"></p>
 
-  <input type="text" id="source" placeholder="Source (NDLS)">
-  <input type="text" id="destination" placeholder="Destination (GKP)">
-  <input type="date" id="date">
-  <input type="text" id="trainNumber" placeholder="Optional Train Number">
+    <!-- TRAIN INFO -->
+    <div class="card" id="trainInfo"></div>
 
-  <button onclick="fetchTrains()">Search</button>
+    <!-- PASSENGER INFO -->
+    <div class="card" id="passengerInfo"></div>
 
-  <div id="trainResult"></div>
+    <!-- EXTRA INFO -->
+    <div class="card" id="extraInfo"></div>
+
+  </div>
 </div>
 
 <script src="script.js"></script>
