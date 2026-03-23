@@ -27,19 +27,19 @@ async function fetchPNR() {
     }
 
     let d = data.data;
-    let p = d.passengers?.[0];
+    let passengers = d.passengers;
 
-    if (!p) {
+    if (!passengers || passengers.length === 0) {
       showError("Passenger data not found");
       return;
     }
 
-    // ======================
-    // 🎯 STATUS CHECK
-    // ======================
-    let status = p.currentStatus || "";
+    let status = passengers[0].currentStatus || "";
 
-    if (status.includes("CNF") || (p.berth && p.berth !== "")) {
+    // ======================
+    // 🎯 CONFIRMED / RAC CHECK
+    // ======================
+    if (status.includes("CNF")) {
       document.getElementById("result").innerHTML = "✅ CONFIRMED";
       document.getElementById("message").innerHTML =
         "Your ticket is confirmed.";
@@ -51,14 +51,16 @@ async function fetchPNR() {
     } 
     else {
       // ======================
-      // 🎯 WL LOGIC
+      // 🎯 WL EXTRACTION
       // ======================
       let wl = 0;
-
       if (status.includes("WL")) {
         wl = parseInt(status.replace(/\D/g, "")) || 0;
       }
 
+      // ======================
+      // 🎯 BASE
+      // ======================
       let maxWL = 200;
       let base = (maxWL - wl) / maxWL;
 
@@ -66,7 +68,84 @@ async function fetchPNR() {
       else if (wl <= 30) base += 0.05;
       else if (wl > 100) base *= 0.6;
 
-      let probability = Math.max(0, Math.min(100, base * 100));
+      base = Math.max(0, Math.min(1, base));
+
+      // ======================
+      // 🎯 QUOTA
+      // ======================
+      let quotaFactor = 1;
+      if (status.includes("GNWL")) quotaFactor = 1.2;
+      else if (status.includes("PQWL")) quotaFactor = 0.9;
+      else if (status.includes("RLWL")) quotaFactor = 0.7;
+
+      // ======================
+      // 🎯 CLASS
+      // ======================
+      let classFactor = 1;
+      if (d.class === "SL") classFactor = 1.2;
+      else if (d.class === "3A") classFactor = 1.0;
+      else if (d.class === "2A") classFactor = 0.85;
+      else if (d.class === "1A") classFactor = 0.6;
+
+      // ======================
+      // 🎯 TIME (DAYS LEFT)
+      // ======================
+      let today = new Date();
+      let [day, month, year] = d.journeyDate.split("-");
+      let journeyDate = new Date(`${year}-${month}-${day}`);
+
+      let diffDays = Math.ceil(
+        (journeyDate - today) / (1000 * 60 * 60 * 24)
+      );
+
+      let timeFactor = 1;
+      if (diffDays > 7) timeFactor = 1.1;
+      else if (diffDays >= 4) timeFactor = 1.0;
+      else if (diffDays >= 2) timeFactor = 0.8;
+      else timeFactor = 1.2;
+
+      // ======================
+      // 🎯 SEASON
+      // ======================
+      let currentMonth = today.getMonth() + 1;
+      let seasonFactor = 1;
+
+      if ([4, 5, 6].includes(currentMonth)) seasonFactor = 0.75;
+      else if ([10, 11].includes(currentMonth)) seasonFactor = 0.7;
+
+      // ======================
+      // 🎯 CAPACITY
+      // ======================
+      let capacityFactor = 1;
+      if (d.class === "SL") capacityFactor = 1.2;
+      else if (d.class === "3A") capacityFactor = 1.0;
+      else if (d.class === "2A") capacityFactor = 0.85;
+      else if (d.class === "1A") capacityFactor = 0.6;
+
+      // ======================
+      // 🔥 DEMAND FACTOR (NEW)
+      // ======================
+      let demandFactor = 1;
+
+      if (wl === 0) demandFactor = 1.1;
+      else if (wl <= 20) demandFactor = 1.0;
+      else if (wl <= 50) demandFactor = 0.9;
+      else demandFactor = 0.75;
+
+      // ======================
+      // 🎯 FINAL PROBABILITY
+      // ======================
+      let probability =
+        base *
+        quotaFactor *
+        classFactor *
+        timeFactor *
+        seasonFactor *
+        capacityFactor *
+        demandFactor *
+        100;
+
+      probability = Math.max(0, Math.min(100, probability));
 
       let label = probability >= 80 ? "High Chance ✅"
                 : probability >= 50 ? "Medium ⚠️"
@@ -90,55 +169,32 @@ async function fetchPNR() {
     `;
 
     // ======================
-    // 👤 PASSENGER INFO
+    // 👤 PASSENGER INFO (MULTIPLE)
     // ======================
-    // ======================
-// 👤 PASSENGER INFO (MULTIPLE)
-// ======================
+    let passengerHTML = "<h3>👤 Passenger</h3>";
 
-let passengers = d.passengers;
-
-let passengerHTML = "<h3>👤 Passenger</h3>";
-
-if (passengers.length === 1) {
-  let p = passengers[0];
-
-  passengerHTML += `
-    <p>Booking: ${p.bookingStatus}</p>
-    <p>Current: ${p.currentStatus}</p>
-    <p>Coach: ${p.coach || "-"}</p>
-    <p>Berth: ${p.berth || "-"}</p>
-  `;
-} else {
-  // Multiple passengers
-  let allSameCoach = true;
-  let firstCoach = passengers[0].coach;
-
-  passengers.forEach(p => {
-    if (p.coach !== firstCoach) {
-      allSameCoach = false;
-    }
-  });
-
-  if (allSameCoach) {
-    // ✅ SAME COACH → COMBINED FORMAT
-    let berths = passengers.map(p => p.berth).join(" / ");
-    let status = passengers[0].currentStatus.split(" ")[0];
-
-    passengerHTML += `
-      <p><b>${status} ${firstCoach}</b> → ${berths}</p>
-    `;
-  } else {
-    // ❌ DIFFERENT COACH → SEPARATE FORMAT
-    passengers.forEach((p, index) => {
+    if (passengers.length === 1) {
+      let p = passengers[0];
       passengerHTML += `
-        <p>P${index + 1}: ${p.currentStatus} (${p.coach}-${p.berth})</p>
+        <p>${p.currentStatus} (${p.coach}-${p.berth})</p>
       `;
-    });
-  }
-}
+    } else {
+      let allSameCoach = passengers.every(p => p.coach === passengers[0].coach);
 
-document.getElementById("passengerInfo").innerHTML = passengerHTML;
+      if (allSameCoach) {
+        let coach = passengers[0].coach;
+        let berths = passengers.map(p => p.berth).join(" / ");
+        let status = passengers[0].currentStatus.split(" ")[0];
+
+        passengerHTML += `<p><b>${status} ${coach}</b> → ${berths}</p>`;
+      } else {
+        passengers.forEach((p, i) => {
+          passengerHTML += `<p>P${i + 1}: ${p.currentStatus} (${p.coach}-${p.berth})</p>`;
+        });
+      }
+    }
+
+    document.getElementById("passengerInfo").innerHTML = passengerHTML;
 
     // ======================
     // 📊 EXTRA INFO
