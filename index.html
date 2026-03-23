@@ -2,73 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ConfirmX - Smart Train Predictor</title>
+  <title>ConfirmX</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="app">
-
-  <!-- 🔥 SIDEBAR -->
-  <div class="sidebar">
-    <h2>🚆 ConfirmX</h2>
-
-    <button onclick="showSection('pnrSection')">PNR Status</button>
-    <button onclick="showSection('trainSection')">Seat Availability</button>
+<div class="navbar">
+  <h1>ConfirmX</h1>
+  <div class="menu">
+    <button onclick="showSection('pnrSection')">PNR Check</button>
+    <button onclick="showSection('trainSection')">Train Search</button>
   </div>
+</div>
 
-  <!-- 🔥 MAIN CONTENT -->
-  <div class="main">
+<!-- PNR SECTION -->
+<div id="pnrSection" class="section active">
+  <h2>Check PNR Status</h2>
+  <input type="text" id="pnrInput" placeholder="Enter PNR">
+  <button onclick="fetchPNR()">Check Now</button>
 
-    <!-- ====================== -->
-    <!-- 🔵 PNR SECTION -->
-    <!-- ====================== -->
-    <div id="pnrSection" class="section active">
+  <div id="pnrResult"></div>
+</div>
 
-      <h1>Check PNR Status</h1>
+<!-- TRAIN SECTION -->
+<div id="trainSection" class="section">
+  <h2>Check Seat Availability</h2>
 
-      <div class="input-group">
-        <input type="text" id="pnrInput" placeholder="Enter 10-digit PNR">
-        <button onclick="fetchPNR()">Check Now</button>
-      </div>
+  <input type="text" id="source" placeholder="Source (NDLS)">
+  <input type="text" id="destination" placeholder="Destination (GKP)">
+  <input type="date" id="date">
+  <input type="text" id="trainNumber" placeholder="Optional Train Number">
 
-      <!-- RESULT -->
-      <div id="pnrResult" class="result-box"></div>
+  <button onclick="fetchTrains()">Search</button>
 
-      <!-- DETAILS -->
-      <div id="trainInfo" class="card"></div>
-      <div id="passengerInfo" class="card"></div>
-      <div id="extraInfo" class="card"></div>
-
-    </div>
-
-    <!-- ====================== -->
-    <!-- 🔴 TRAIN SEARCH SECTION -->
-    <!-- ====================== -->
-    <div id="trainSection" class="section">
-
-      <h1>Check Seat Availability</h1>
-
-      <div class="input-group">
-        <input type="text" id="source" placeholder="Source (NDLS)">
-        <input type="text" id="destination" placeholder="Destination (GKP)">
-        <input type="date" id="date">
-        <input type="text" id="trainNumber" placeholder="Optional Train Number">
-        <button onclick="searchTrains()">Search</button>
-      </div>
-
-      <!-- RESULTS -->
-      <div id="trainResults" class="result-grid"></div>
-
-    </div>
-
-  </div>
-
+  <div id="trainResult"></div>
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
