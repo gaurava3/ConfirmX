@@ -1,44 +1,29 @@
 body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Arial;
   background: #0f172a;
   color: white;
+  margin: 0;
 }
 
-.sidebar {
-  width: 220px;
-  height: 100vh;
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
   background: #020617;
-  position: fixed;
-  padding: 20px;
 }
 
-.sidebar h2 {
-  color: #22c55e;
-}
-
-.sidebar button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background: #1e293b;
+.menu button {
+  margin-left: 10px;
+  padding: 10px;
+  background: #22c55e;
   border: none;
   color: white;
   cursor: pointer;
-  border-radius: 8px;
-}
-
-.sidebar button:hover {
-  background: #22c55e;
-}
-
-.main {
-  margin-left: 240px;
-  padding: 30px;
 }
 
 .section {
   display: none;
+  padding: 20px;
 }
 
 .section.active {
@@ -48,29 +33,21 @@ body {
 input {
   display: block;
   margin: 10px 0;
-  padding: 12px;
-  width: 300px;
-  border-radius: 8px;
-  border: none;
-  background: #1e293b;
-  color: white;
+  padding: 10px;
+  width: 250px;
 }
 
 button {
-  padding: 12px 20px;
+  padding: 10px 15px;
   background: #22c55e;
   border: none;
-  border-radius: 8px;
+  color: white;
   cursor: pointer;
-}
-
-button:hover {
-  background: #16a34a;
 }
 
 .card {
   background: #1e293b;
   padding: 15px;
   margin-top: 15px;
-  border-radius: 12px;
+  border-radius: 10px;
 }
