@@ -1,3 +1,10 @@
+function showSection(sectionId) {
+  const sections = document.querySelectorAll('.section');
+
+  sections.forEach(sec => sec.classList.remove('active'));
+
+  document.getElementById(sectionId).classList.add('active');
+}
 // ======================
 // 🔹 SECTION SWITCH
 // ======================
@@ -69,11 +76,25 @@ function calculateProbability({ wl, className, quota, journeyDate }) {
 // ======================
 // 🔥 PNR FUNCTION (FULL LOGIC)
 // ======================
-async function fetchPNR() {
+function fetchPNR() {
+  const input = document.getElementById("pnrInput");
 
-  let pnr = document.getElementById("pnrInput").value.trim();
-  if (!pnr) return alert("Enter PNR");
+  if (!input) {
+    console.error("PNR input not found");
+    return;
+  }
 
+  const pnr = input.value.trim();
+
+  if (!pnr) {
+    alert("Enter PNR number");
+    return;
+  }
+
+  console.log("PNR:", pnr);
+
+  // your API logic continues...
+}
   try {
     let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
       headers: {
