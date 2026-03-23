@@ -1,40 +1,49 @@
-// TRAIN SEARCH + PREDICTION ENGINE
-
 async function fetchTrains() {
-  const source = document.getElementById("source").value.trim();
-  const destination = document.getElementById("destination").value.trim();
-  const date = document.getElementById("date").value;
+  const source = document.getElementById("source").value.trim().toUpperCase();
+  const destination = document.getElementById("destination").value.trim().toUpperCase();
+  const dateInput = document.getElementById("date").value;
   const trainNumber = document.getElementById("trainNumber").value.trim();
 
-  if (!source || !destination || !date) {
-    alert("Please fill Source, Destination & Date");
+  if (!source || !destination || !dateInput) {
+    alert("Fill all fields");
     return;
   }
 
+  // ✅ FIX DATE FORMAT
+  const [year, month, day] = dateInput.split("-");
+  const formattedDate = `${day}-${month}-${year}`;
+
   const resultBox = document.getElementById("trainResult");
-  resultBox.innerHTML = "Loading trains...";
+  resultBox.innerHTML = "Loading...";
 
   try {
-    const response = await fetch(`https://irctc-api2.p.rapidapi.com/trainAvailability?source=${source}&destination=${destination}&date=${date}`, {
-      method: "GET",
-      headers: {
-        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
-        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
+    const response = await fetch(
+      `https://irctc-api2.p.rapidapi.com/trainAvailability?source=${source}&destination=${destination}&date=${formattedDate}`,
+      {
+        headers: {
+          "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
+          "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
+        }
       }
-    });
+    );
+    
+    const resData = await response.json();
+    console.log("API:", resData);
 
-    const data = await response.json();
-    console.log("Train API Data:", data);
+    if (!resData.success) {
+      resultBox.innerHTML = "Invalid input / No data";
+      return;
+    }
 
-    let trains = data.data;
+    let trains = resData.data;
 
-    // FILTER TRAIN NUMBER (optional feature)
+    // ✅ FILTER TRAIN NUMBER
     if (trainNumber) {
       trains = trains.filter(t => t.trainNumber === trainNumber);
     }
 
     if (!trains.length) {
-      resultBox.innerHTML = "No trains found.";
+      resultBox.innerHTML = "No trains found";
       return;
     }
 
@@ -49,8 +58,9 @@ async function fetchTrains() {
           <p>Duration: ${train.duration}</p>
       `;
 
+      // ✅ LOOP CLASSES
       train.classAvailability.forEach(cls => {
-        let probability = calculateTrainProbability(cls, date);
+        let probability = calculateTrainProbability(cls, dateInput);
 
         html += `
           <div class="class-box">
@@ -68,39 +78,38 @@ async function fetchTrains() {
 
   } catch (error) {
     console.error(error);
-    resultBox.innerHTML = "Error fetching trains.";
+    resultBox.innerHTML = "Error fetching trains";
   }
 }
 
 
-// 🔥 YOUR CUSTOM ADVANCED FORMULA
+// 🔥 YOUR LOGIC (IMPROVED)
 function calculateTrainProbability(cls, journeyDate) {
-
   let prob = 50;
-
   const status = cls.availability;
 
-  // ✅ Waiting factor
+  // WL logic
   if (status.includes("WL")) {
-    let wl = parseInt(status.split("WL")[1]) || 0;
+    let match = status.match(/WL(\d+)/);
+    let wl = match ? parseInt(match[1]) : 0;
     prob -= wl * 1.5;
   }
 
-  // ✅ Available seats boost
+  // Available
   if (status.includes("AVL") || status.includes("AVAILABLE")) {
-    prob = 100;
+    return 100;
   }
 
-  // ✅ RAC boost
+  // RAC
   if (status.includes("RAC")) {
     prob += 30;
   }
 
-  // ✅ Quota factor
+  // Quota
   if (cls.quota === "GN") prob += 5;
   if (cls.quota === "PQ") prob -= 5;
 
-  // ✅ Days left factor
+  // Days factor
   const today = new Date();
   const journey = new Date(journeyDate);
   const diffDays = Math.ceil((journey - today) / (1000 * 60 * 60 * 24));
@@ -109,9 +118,5 @@ function calculateTrainProbability(cls, journeyDate) {
   else if (diffDays > 5) prob += 5;
   else prob -= 10;
 
-  // ✅ Clamp
-  if (prob > 100) prob = 100;
-  if (prob < 0) prob = 0;
-
-  return Math.round(prob);
+  return Math.max(0, Math.min(100, Math.round(prob)));
 }
