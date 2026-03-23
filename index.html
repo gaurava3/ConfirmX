@@ -5,36 +5,55 @@
   <title>ConfirmX</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="container">
-  <h1>ConfirmX</h1>
-  <p>Check your ticket confirmation chances</p>
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>🚆 ConfirmX</h2>
 
-  <!-- INPUT -->
-  <input type="text" id="pnr" placeholder="Enter PNR Number">
+  <button onclick="showSection('pnrSection')">PNR Status</button>
+  <button onclick="showSection('trainSection')">Seat Availability</button>
+</div>
 
-  <!-- BUTTON -->
-  <button onclick="fetchPNR()">Check Now</button>
+<!-- Main -->
+<div class="main">
 
-  <!-- RESULT -->
-  <div id="resultBox">
+  <!-- PNR SECTION -->
+  <div id="pnrSection" class="section active">
 
-    <h2 id="result"></h2>
-    <p id="message"></p>
+    <h1>Check PNR Status</h1>
 
-    <!-- TRAIN INFO -->
+    <input type="text" id="pnrInput" placeholder="Enter PNR Number">
+    <button onclick="fetchPNR()">Check Now</button>
+
+    <div id="pnrResult"></div>
+
     <div class="card" id="trainInfo"></div>
-
-    <!-- PASSENGER INFO -->
     <div class="card" id="passengerInfo"></div>
-
-    <!-- EXTRA INFO -->
     <div class="card" id="extraInfo"></div>
 
   </div>
+
+  <!-- TRAIN SECTION -->
+  <div id="trainSection" class="section">
+
+    <h1>Check Seat Availability</h1>
+
+    <input type="text" id="source" placeholder="Source (NDLS)">
+    <input type="text" id="destination" placeholder="Destination (GKP)">
+    <input type="date" id="date">
+    <input type="text" id="trainNumber" placeholder="Optional Train Number">
+
+    <button onclick="searchTrains()">Search</button>
+
+    <div id="trainResults"></div>
+
+  </div>
+
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>
