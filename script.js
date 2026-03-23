@@ -1,144 +1,226 @@
-// SECTION SWITCH
-function showSection(id) {
-  document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-// 🔥 YOUR PREDICTION FORMULA
-function calculateProbability(status, daysLeft) {
-  let prob = 50;
-
-  // Waiting factor
-  if (status.includes("WL")) {
-    let num = parseInt(status.replace(/\D/g, ""));
-    prob -= num * 2;
-  }
-
-  // Days factor
-  if (daysLeft > 10) prob += 20;
-  else if (daysLeft > 3) prob += 10;
-  else prob -= 10;
-
-  // Clamp
-  if (prob > 100) prob = 100;
-  if (prob < 0) prob = 0;
-
-  return prob;
-}
-
-// 🚆 FETCH PNR
 async function fetchPNR() {
-  const pnr = document.getElementById("pnrInput").value.trim();
+  let pnr = document.getElementById("pnr").value.trim();
 
   if (!pnr) {
-    alert("Enter PNR");
+    alert("Enter PNR first");
     return;
   }
 
-  const resultBox = document.getElementById("pnrResult");
-  resultBox.innerHTML = "Loading...";
+  document.getElementById("result").innerHTML = "Loading...";
+  document.getElementById("message").innerHTML = "";
 
   try {
-    const res = await fetch(`YOUR_PNR_API_URL/${pnr}`, {
+    let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
+      method: "GET",
       headers: {
-        "X-RapidAPI-Key": "YOUR_KEY",
-        "X-RapidAPI-Host": "YOUR_HOST"
+        "X-RapidAPI-Key": "YOUR_API_KEY",
+        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
       }
     });
 
-    const data = await res.json();
+    let data = await res.json();
+    console.log("FULL DATA:", data);
 
-    console.log(data);
+    if (!data || !data.success || !data.data) {
+      showError("Invalid PNR");
+      return;
+    }
 
-    let passengers = data.data.passengers;
+    let d = data.data;
+    let passengers = d.passengers;
 
-    let html = `<div class="card">`;
+    if (!passengers || passengers.length === 0) {
+      showError("Passenger data not found");
+      return;
+    }
 
-    passengers.forEach(p => {
-      let prob;
+    let status = passengers[0].currentStatus || "";
 
-      if (p.currentStatus.includes("CNF")) {
-        prob = 100;
-      } else {
-        prob = calculateProbability(p.currentStatus, 5);
+    // ======================
+    // 🎯 CONFIRMED / RAC CHECK
+    // ======================
+    if (status.includes("CNF")) {
+      document.getElementById("result").innerHTML = "✅ CONFIRMED";
+      document.getElementById("message").innerHTML =
+        "Your ticket is confirmed.";
+    } 
+    else if (status.includes("RAC")) {
+      document.getElementById("result").innerHTML = "⚠️ RAC";
+      document.getElementById("message").innerHTML =
+        "High chances of confirmation.";
+    } 
+    else {
+      // ======================
+      // 🎯 WL EXTRACTION
+      // ======================
+      let wl = 0;
+      if (status.includes("WL")) {
+        wl = parseInt(status.replace(/\D/g, "")) || 0;
       }
 
-      html += `
-        <p><b>Passenger ${p.number}</b></p>
-        <p>Status: ${p.currentStatus}</p>
-        <p>Chance: ${prob}%</p>
-        <hr>
+      // ======================
+      // 🎯 BASE
+      // ======================
+      let maxWL = 200;
+      let base = (maxWL - wl) / maxWL;
+
+      if (wl <= 10) base += 0.15;
+      else if (wl <= 30) base += 0.05;
+      else if (wl > 100) base *= 0.6;
+
+      base = Math.max(0, Math.min(1, base));
+
+      // ======================
+      // 🎯 QUOTA
+      // ======================
+      let quotaFactor = 1;
+      if (status.includes("GNWL")) quotaFactor = 1.2;
+      else if (status.includes("PQWL")) quotaFactor = 0.9;
+      else if (status.includes("RLWL")) quotaFactor = 0.7;
+
+      // ======================
+      // 🎯 CLASS
+      // ======================
+      let classFactor = 1;
+      if (d.class === "SL") classFactor = 1.2;
+      else if (d.class === "3A") classFactor = 1.0;
+      else if (d.class === "2A") classFactor = 0.85;
+      else if (d.class === "1A") classFactor = 0.6;
+
+      // ======================
+      // 🎯 TIME (DAYS LEFT)
+      // ======================
+      let today = new Date();
+      let [day, month, year] = d.journeyDate.split("-");
+      let journeyDate = new Date(`${year}-${month}-${day}`);
+
+      let diffDays = Math.ceil(
+        (journeyDate - today) / (1000 * 60 * 60 * 24)
+      );
+
+      let timeFactor = 1;
+      if (diffDays > 7) timeFactor = 1.1;
+      else if (diffDays >= 4) timeFactor = 1.0;
+      else if (diffDays >= 2) timeFactor = 0.8;
+      else timeFactor = 1.2;
+
+      // ======================
+      // 🎯 SEASON
+      // ======================
+      let currentMonth = today.getMonth() + 1;
+      let seasonFactor = 1;
+
+      if ([4, 5, 6].includes(currentMonth)) seasonFactor = 0.75;
+      else if ([10, 11].includes(currentMonth)) seasonFactor = 0.7;
+
+      // ======================
+      // 🎯 CAPACITY
+      // ======================
+      let capacityFactor = 1;
+      if (d.class === "SL") capacityFactor = 1.2;
+      else if (d.class === "3A") capacityFactor = 1.0;
+      else if (d.class === "2A") capacityFactor = 0.85;
+      else if (d.class === "1A") capacityFactor = 0.6;
+
+      // ======================
+      // 🔥 DEMAND FACTOR (NEW)
+      // ======================
+      let demandFactor = 1;
+
+      if (wl === 0) demandFactor = 1.1;
+      else if (wl <= 20) demandFactor = 1.0;
+      else if (wl <= 50) demandFactor = 0.9;
+      else demandFactor = 0.75;
+
+      // ======================
+      // 🎯 FINAL PROBABILITY
+      // ======================
+      let probability =
+        base *
+        quotaFactor *
+        classFactor *
+        timeFactor *
+        seasonFactor *
+        capacityFactor *
+        demandFactor *
+        100;
+
+      probability = Math.max(0, Math.min(100, probability));
+
+      let label = probability >= 80 ? "High Chance ✅"
+                : probability >= 50 ? "Medium ⚠️"
+                : "Low Chance ❌";
+
+      document.getElementById("result").innerHTML =
+        probability.toFixed(2) + "% - " + label;
+    }
+
+    // ======================
+    // 🚆 TRAIN INFO
+    // ======================
+    document.getElementById("trainInfo").innerHTML = `
+      <h3>🚆 Train Info</h3>
+      <p><b>${d.trainName}</b> (${d.trainNumber})</p>
+      <p>🚉 ${d.source || "-"} → ${d.destination || "-"}</p>
+      <p>Departure: ${d.departureTime || "-"}</p>
+      <p>Arrival: ${d.arrivalTime || "-"}</p>
+      <p>Duration: ${d.duration || "-"}</p>
+      <p>Class: ${d.class || "-"}</p>
+    `;
+
+    // ======================
+    // 👤 PASSENGER INFO (MULTIPLE)
+    // ======================
+    let passengerHTML = "<h3>👤 Passenger</h3>";
+
+    if (passengers.length === 1) {
+      let p = passengers[0];
+      passengerHTML += `
+        <p>${p.currentStatus} (${p.coach}-${p.berth})</p>
       `;
-    });
+    } else {
+      let allSameCoach = passengers.every(p => p.coach === passengers[0].coach);
 
-    html += `</div>`;
+      if (allSameCoach) {
+        let coach = passengers[0].coach;
+        let berths = passengers.map(p => p.berth).join(" / ");
+        let status = passengers[0].currentStatus.split(" ")[0];
 
-    resultBox.innerHTML = html;
+        passengerHTML += `<p><b>${status} ${coach}</b> → ${berths}</p>`;
+      } else {
+        passengers.forEach((p, i) => {
+          passengerHTML += `<p>P${i + 1}: ${p.currentStatus} (${p.coach}-${p.berth})</p>`;
+        });
+      }
+    }
 
-  } catch (err) {
-    console.error(err);
-    resultBox.innerHTML = "Error fetching PNR";
+    document.getElementById("passengerInfo").innerHTML = passengerHTML;
+
+    // ======================
+    // 📊 EXTRA INFO
+    // ======================
+    document.getElementById("extraInfo").innerHTML = `
+      <h3>📊 Extra Info</h3>
+      <p>Fare: ₹${d.fare?.ticketFare || "-"}</p>
+      <p>Chart Prepared: ${d.chartPrepared ? "Yes" : "No"}</p>
+      <p>Train Status: ${d.trainStatus || "-"}</p>
+      <p>Cancelled: ${d.isCancelled ? "Yes" : "No"}</p>
+      <p>Food Rating: ${d.ratings?.food || "-"}</p>
+      <p>Cleanliness: ${d.ratings?.cleanliness || "-"}</p>
+      <p>Overall Rating: ${d.ratings?.overall || "-"}</p>
+      <p>Pantry: ${d.hasPantry ? "Yes" : "No"}</p>
+    `;
+
+  } catch (error) {
+    console.error(error);
+    showError("Failed to fetch PNR data");
   }
 }
 
-// 🚆 FETCH TRAINS
-async function fetchTrains() {
-  const source = document.getElementById("source").value;
-  const dest = document.getElementById("destination").value;
-  const date = document.getElementById("date").value;
-  const trainNo = document.getElementById("trainNumber").value;
-
-  if (!source || !dest || !date) {
-    alert("Fill all fields");
-    return;
-  }
-
-  const resultBox = document.getElementById("trainResult");
-  resultBox.innerHTML = "Loading...";
-
-  try {
-    const res = await fetch(`YOUR_TRAIN_API_URL?source=${source}&destination=${dest}&date=${date}`, {
-      headers: {
-        "X-RapidAPI-Key": "YOUR_KEY",
-        "X-RapidAPI-Host": "YOUR_HOST"
-      }
-    });
-
-    const data = await res.json();
-
-    console.log(data);
-
-    let trains = data.data;
-
-    // FILTER TRAIN NUMBER
-    if (trainNo) {
-      trains = trains.filter(t => t.trainNumber === trainNo);
-    }
-
-    let html = "";
-
-    trains.forEach(train => {
-      html += `<div class="card">
-        <h3>${train.trainName} (${train.trainNumber})</h3>
-        <p>${train.from.code} → ${train.to.code}</p>
-        <p>Duration: ${train.duration}</p>
-      `;
-
-      train.classAvailability.forEach(cls => {
-        let prob = cls.predictionPercent || calculateProbability(cls.availability, 5);
-
-        html += `
-          <p>${cls.class} → ${cls.displayStatus} (${prob}%)</p>
-        `;
-      });
-
-      html += `</div>`;
-    });
-
-    resultBox.innerHTML = html;
-
-  } catch (err) {
-    console.error(err);
-    resultBox.innerHTML = "Error fetching trains";
-  }
+// ======================
+// ❌ ERROR HANDLER
+// ======================
+function showError(msg) {
+  document.getElementById("result").innerHTML = msg;
+  document.getElementById("message").innerHTML = "";
 }
