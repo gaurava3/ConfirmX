@@ -11,13 +11,11 @@
   <h1>ConfirmX</h1>
   <p>Check your ticket confirmation chances</p>
 
-  <!-- INPUT -->
+  <!-- 🔹 PNR SECTION (UNCHANGED) -->
   <input type="text" id="pnr" placeholder="Enter PNR Number">
 
-  <!-- BUTTON -->
   <button onclick="fetchPNR()">Check Now</button>
 
-  <!-- RESULT -->
   <div id="resultBox">
 
     <h2 id="result"></h2>
@@ -33,8 +31,28 @@
     <div class="card" id="extraInfo"></div>
 
   </div>
+
+  <!-- 🔥 NEW SECTION (ADDED BELOW PNR) -->
+  <hr style="margin: 30px 0;">
+
+  <h2>Check Seat Availability</h2>
+
+  <input type="text" id="source" placeholder="Source (NDLS)">
+  <input type="text" id="destination" placeholder="Destination (GKP)">
+  <input type="date" id="date">
+  <input type="text" id="trainNumber" placeholder="Optional Train Number">
+
+  <button onclick="fetchTrains()">Search Trains</button>
+
+  <div id="trainResult"></div>
+
 </div>
 
+<!-- OLD PNR JS -->
 <script src="script.js"></script>
+
+<!-- NEW TRAIN JS -->
+<script src="train.js"></script>
+
 </body>
 </html>
