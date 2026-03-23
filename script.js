@@ -13,7 +13,7 @@ async function fetchPNR() {
     let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
       method: "GET",
       headers: {
-        "X-RapidAPI-Key": "YOUR_API_KEY",
+        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
         "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
       }
     });
