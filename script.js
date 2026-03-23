@@ -166,6 +166,7 @@ async function fetchPNR() {
       <p>Arrival: ${d.arrivalTime || "-"}</p>
       <p>Duration: ${d.duration || "-"}</p>
       <p>Class: ${d.class || "-"}</p>
+      <p>Time Takes: ${d.hours || "-"}</p>
     `;
 
     // ======================
