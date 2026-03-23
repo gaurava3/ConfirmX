@@ -1,245 +1,144 @@
-function showSection(sectionId) {
-  const sections = document.querySelectorAll('.section');
-
-  sections.forEach(sec => sec.classList.remove('active'));
-
-  document.getElementById(sectionId).classList.add('active');
-}
-// ======================
-// 🔹 SECTION SWITCH
-// ======================
+// SECTION SWITCH
 function showSection(id) {
-  document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
 }
 
-// ======================
-// 🔥 COMMON FORMULA FUNCTION (CORE ENGINE)
-// ======================
-function calculateProbability({ wl, className, quota, journeyDate }) {
+// 🔥 YOUR PREDICTION FORMULA
+function calculateProbability(status, daysLeft) {
+  let prob = 50;
 
-  // Base
-  let base = (200 - wl) / 200;
-
-  // Demand Factor
-  let demandFactor = wl <= 10 ? 1.1 :
-                     wl <= 30 ? 1.0 :
-                     wl <= 80 ? 0.85 : 0.7;
-
-  // Class Factor
-  let classFactor = 1;
-  if (className === "SL") classFactor = 1.2;
-  else if (className === "3A" || className === "3E") classFactor = 1.0;
-  else if (className === "2A") classFactor = 0.85;
-  else if (className === "1A") classFactor = 0.6;
-
-  // Quota Factor
-  let quotaFactor = 1;
-  if (quota.includes("GN")) quotaFactor = 1.2;
-  else if (quota.includes("PQ")) quotaFactor = 0.9;
-  else if (quota.includes("RL")) quotaFactor = 0.7;
-
-  // Time Factor
-  let timeFactor = 1;
-  try {
-    let today = new Date();
-    let journey = new Date(journeyDate);
-
-    let diffDays = Math.ceil((journey - today) / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 7) timeFactor = 1.1;
-    else if (diffDays >= 4) timeFactor = 1.0;
-    else if (diffDays >= 2) timeFactor = 0.8;
-    else timeFactor = 1.2;
-  } catch {}
-
-  // Season Factor
-  let month = new Date().getMonth() + 1;
-  let seasonFactor = 1;
-
-  if ([4,5,6].includes(month)) seasonFactor = 0.75;
-  else if ([10,11].includes(month)) seasonFactor = 0.7;
-
-  // Final Probability
-  let probability =
-    base *
-    demandFactor *
-    classFactor *
-    quotaFactor *
-    timeFactor *
-    seasonFactor *
-    100;
-
-  return Math.max(0, Math.min(100, probability));
-}
-
-// ======================
-// 🔥 PNR FUNCTION (FULL LOGIC)
-// ======================
-function fetchPNR() {
-  const input = document.getElementById("pnrInput");
-
-  if (!input) {
-    console.error("PNR input not found");
-    return;
+  // Waiting factor
+  if (status.includes("WL")) {
+    let num = parseInt(status.replace(/\D/g, ""));
+    prob -= num * 2;
   }
 
-  const pnr = input.value.trim();
+  // Days factor
+  if (daysLeft > 10) prob += 20;
+  else if (daysLeft > 3) prob += 10;
+  else prob -= 10;
+
+  // Clamp
+  if (prob > 100) prob = 100;
+  if (prob < 0) prob = 0;
+
+  return prob;
+}
+
+// 🚆 FETCH PNR
+async function fetchPNR() {
+  const pnr = document.getElementById("pnrInput").value.trim();
 
   if (!pnr) {
-    alert("Enter PNR number");
+    alert("Enter PNR");
     return;
   }
 
-  console.log("PNR:", pnr);
+  const resultBox = document.getElementById("pnrResult");
+  resultBox.innerHTML = "Loading...";
 
-  // your API logic continues...
-}
   try {
-    let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
+    const res = await fetch(`YOUR_PNR_API_URL/${pnr}`, {
       headers: {
-        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
-        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
+        "X-RapidAPI-Key": "YOUR_KEY",
+        "X-RapidAPI-Host": "YOUR_HOST"
       }
     });
 
-    let data = await res.json();
+    const data = await res.json();
 
-    if (!data.success) {
-      document.getElementById("pnrResult").innerHTML = "Invalid PNR";
-      return;
-    }
+    console.log(data);
 
-    let d = data.data;
-    let passengers = d.passengers;
-    let status = passengers[0].currentStatus;
+    let passengers = data.data.passengers;
 
-    // CONFIRMED / RAC
-    if (status.includes("CNF")) {
-      document.getElementById("pnrResult").innerHTML = "<h2>✅ Confirmed</h2>";
-    } else if (status.includes("RAC")) {
-      document.getElementById("pnrResult").innerHTML = "<h2>⚠️ RAC (High Chance)</h2>";
-    } else {
+    let html = `<div class="card">`;
 
-      let wl = parseInt(status.replace(/\D/g, "")) || 0;
+    passengers.forEach(p => {
+      let prob;
 
-      let probability = calculateProbability({
-        wl: wl,
-        className: d.class,
-        quota: status,
-        journeyDate: d.journeyDate
-      });
+      if (p.currentStatus.includes("CNF")) {
+        prob = 100;
+      } else {
+        prob = calculateProbability(p.currentStatus, 5);
+      }
 
-      document.getElementById("pnrResult").innerHTML =
-        `<h2>${probability.toFixed(0)}% Chance</h2>`;
-    }
-
-    // TRAIN INFO
-    document.getElementById("trainInfo").innerHTML = `
-      <h3>${d.trainName} (${d.trainNumber})</h3>
-      <p>${d.source} → ${d.destination}</p>
-      <p>Departure: ${d.departureTime}</p>
-      <p>Arrival: ${d.arrivalTime}</p>
-      <p>Duration: ${d.duration}</p>
-      <p>Class: ${d.class}</p>
-    `;
-
-    // PASSENGERS
-    let phtml = "<h3>Passengers</h3>";
-    passengers.forEach((p,i)=>{
-      phtml += `<p>P${i+1}: ${p.currentStatus} (${p.coach}-${p.berth})</p>`;
+      html += `
+        <p><b>Passenger ${p.number}</b></p>
+        <p>Status: ${p.currentStatus}</p>
+        <p>Chance: ${prob}%</p>
+        <hr>
+      `;
     });
-    document.getElementById("passengerInfo").innerHTML = phtml;
 
-    // EXTRA
-    document.getElementById("extraInfo").innerHTML = `
-      <h3>Extra Info</h3>
-      <p>Fare: ₹${d.fare?.ticketFare || "-"}</p>
-      <p>Chart Prepared: ${d.chartPrepared ? "Yes" : "No"}</p>
-      <p>Food Rating: ${d.ratings?.food || "-"}</p>
-    `;
+    html += `</div>`;
 
-  } catch (error) {
-    console.log(error);
-    alert("Error fetching PNR");
+    resultBox.innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    resultBox.innerHTML = "Error fetching PNR";
   }
 }
 
-// ======================
-// 🚆 TRAIN SEARCH FUNCTION (FULL LOGIC)
-// ======================
-async function searchTrains() {
+// 🚆 FETCH TRAINS
+async function fetchTrains() {
+  const source = document.getElementById("source").value;
+  const dest = document.getElementById("destination").value;
+  const date = document.getElementById("date").value;
+  const trainNo = document.getElementById("trainNumber").value;
 
-  let source = document.getElementById("source").value;
-  let destination = document.getElementById("destination").value;
-  let date = document.getElementById("date").value;
-  let trainNumber = document.getElementById("trainNumber").value.trim();
-
-  if (!source || !destination || !date) {
+  if (!source || !dest || !date) {
     alert("Fill all fields");
     return;
   }
 
+  const resultBox = document.getElementById("trainResult");
+  resultBox.innerHTML = "Loading...";
+
   try {
-    let res = await fetch(`https://irctc-api2.p.rapidapi.com/trainAvailability?source=${source}&destination=${destination}&date=${date}`, {
+    const res = await fetch(`YOUR_TRAIN_API_URL?source=${source}&destination=${dest}&date=${date}`, {
       headers: {
-        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
-        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
+        "X-RapidAPI-Key": "YOUR_KEY",
+        "X-RapidAPI-Host": "YOUR_HOST"
       }
     });
 
-    let data = await res.json();
+    const data = await res.json();
+
+    console.log(data);
+
     let trains = data.data;
 
-    // FILTER TRAIN
-    if (trainNumber) {
-      trains = trains.filter(t => t.trainNumber === trainNumber);
+    // FILTER TRAIN NUMBER
+    if (trainNo) {
+      trains = trains.filter(t => t.trainNumber === trainNo);
     }
 
-    let output = "";
+    let html = "";
 
     trains.forEach(train => {
+      html += `<div class="card">
+        <h3>${train.trainName} (${train.trainNumber})</h3>
+        <p>${train.from.code} → ${train.to.code}</p>
+        <p>Duration: ${train.duration}</p>
+      `;
 
       train.classAvailability.forEach(cls => {
+        let prob = cls.predictionPercent || calculateProbability(cls.availability, 5);
 
-        let status = cls.displayStatus;
-        let wl = 0;
-
-        if (cls.availability.includes("WL")) {
-          wl = parseInt(cls.availability.split("WL")[1]) || 0;
-        }
-
-        let probability = calculateProbability({
-          wl: wl,
-          className: cls.class,
-          quota: cls.quota,
-          journeyDate: date
-        });
-
-        // OVERRIDE CONDITIONS
-        if (status.includes("AVL") || status.includes("CURR")) probability = 100;
-        if (status.includes("RAC")) probability = 90;
-        if (status.includes("REGRET") || status.includes("Cancelled")) probability = 0;
-
-        output += `
-          <div class="card">
-            <h3>${train.trainName} (${train.trainNumber})</h3>
-            <p>${train.from.name} → ${train.to.name}</p>
-            <p>Departure: ${train.departure} | Arrival: ${train.arrival}</p>
-            <p>Class: ${cls.class}</p>
-            <p>Status: ${status}</p>
-            <p>Fare: ₹${cls.fare}</p>
-            <h3>${probability.toFixed(0)}% Chance</h3>
-          </div>
+        html += `
+          <p>${cls.class} → ${cls.displayStatus} (${prob}%)</p>
         `;
       });
 
+      html += `</div>`;
     });
 
-    document.getElementById("trainResults").innerHTML = output;
+    resultBox.innerHTML = html;
 
-  } catch (error) {
-    console.log(error);
-    alert("Error fetching trains");
+  } catch (err) {
+    console.error(err);
+    resultBox.innerHTML = "Error fetching trains";
   }
 }
