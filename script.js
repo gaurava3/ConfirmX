@@ -1,159 +1,138 @@
-/* GLOBAL */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at top, #0f172a, #020617);
-  color: white;
-}
+// ✅ MAKE FUNCTION GLOBAL (IMPORTANT)
+window.fetchPNR = async function () {
 
-/* NAVBAR */
-.navbar {
-  padding: 20px;
-  text-align: center;
-  font-size: 26px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
+  console.log("🔥 PNR Button Clicked");
 
-/* HERO */
-.hero {
-  text-align: center;
-  padding: 50px 20px;
-}
+  const pnr = document.getElementById("pnrInput")?.value.trim();
 
-.hero h2 {
-  font-size: 32px;
-  margin-bottom: 10px;
-}
+  const resultBox = document.getElementById("pnrResult");
 
-.hero p {
-  color: #94a3b8;
-}
-
-/* CONTAINER */
-.container {
-  max-width: 1100px;
-  margin: 30px auto;
-  padding: 0 20px;
-}
-
-/* GLASS CARD */
-.card-glass {
-  background: rgba(255,255,255,0.05);
-  border-radius: 18px;
-  padding: 25px;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* FORM */
-.form-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 15px;
-}
-
-.form-row.center {
-  justify-content: center;
-}
-
-input {
-  flex: 1;
-  min-width: 150px;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  background: rgba(255,255,255,0.08);
-  color: white;
-  font-size: 14px;
-}
-
-input::placeholder {
-  color: #94a3b8;
-}
-
-/* BUTTON */
-button {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  border: none;
-  padding: 14px 20px;
-  border-radius: 12px;
-  color: white;
-  cursor: pointer;
-  transition: 0.3s;
-  font-weight: bold;
-}
-
-button:hover {
-  transform: scale(1.07);
-  box-shadow: 0 0 20px rgba(34,197,94,0.6);
-}
-
-/* TRAIN CARD */
-.card {
-  background: rgba(255,255,255,0.07);
-  padding: 20px;
-  border-radius: 14px;
-  margin-top: 20px;
-  transition: 0.3s;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-}
-
-/* BEST TRAIN */
-.best-train {
-  border: 2px solid #22c55e;
-  box-shadow: 0 0 20px rgba(34,197,94,0.5);
-}
-
-/* CLASS BOX */
-.class-box {
-  background: rgba(255,255,255,0.1);
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 10px;
-}
-
-/* PROGRESS BAR */
-.progress {
-  height: 8px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 10px;
-  margin-top: 6px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  border-radius: 10px;
-}
-
-/* COLORS */
-.green { background: #22c55e; }
-.yellow { background: #eab308; }
-.red { background: #ef4444; }
-
-/* RESULT SPACING */
-#trainResult {
-  margin-top: 20px;
-}
-
-/* MOBILE */
-@media(max-width: 600px) {
-  .form-row {
-    flex-direction: column;
+  if (!pnr) {
+    alert("Enter PNR first");
+    return;
   }
 
-  button {
-    width: 100%;
+  resultBox.innerHTML = "Loading...";
+
+  try {
+
+    // ✅ YOUR API (UNCHANGED)
+    let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
+      method: "GET",
+      headers: {
+        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
+        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
+      }
+    });
+
+    let data = await res.json();
+    console.log("FULL DATA:", data);
+
+    if (!data || !data.success || !data.data) {
+      resultBox.innerHTML = "<p style='color:red;'>Invalid PNR</p>";
+      return;
+    }
+
+    const d = data.data;
+
+    // ✅ TRAIN INFO
+    let html = `
+      <div class="card">
+        <h3>${d.trainName} (${d.trainNumber})</h3>
+        <p><b>${d.source}</b> → <b>${d.destination}</b></p>
+        <p>Departure: ${d.departureTime} | Arrival: ${d.arrivalTime}</p>
+        <p>Class: ${d.journeyClass}</p>
+    `;
+
+    // ✅ PASSENGERS LOOP
+    let totalProb = 0;
+    let count = 0;
+
+    d.passengers.forEach((p, i) => {
+
+      let status = p.currentStatus;
+      let prob = calculatePNRProbability(status, d);
+
+      totalProb += prob;
+      count++;
+
+      html += `
+        <div class="class-box">
+          <p><b>Passenger ${i + 1}</b></p>
+          <p>Booking: ${p.bookingStatus}</p>
+          <p>Current: ${p.currentStatus}</p>
+          <p>Coach: ${p.coach || "-"}</p>
+          <p>Berth: ${p.berth || "-"}</p>
+          <p>Chance: ${prob}%</p>
+        </div>
+      `;
+    });
+
+    // ✅ FINAL PROBABILITY
+    let finalProb = Math.round(totalProb / count);
+
+    html += `
+      <div class="class-box">
+        <h3>Final Prediction: ${finalProb}%</h3>
+      </div>
+    `;
+
+    html += `</div>`;
+
+    resultBox.innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    resultBox.innerHTML = "<p style='color:red;'>Error fetching PNR</p>";
   }
+};
+
+
+// 🔥 YOUR FORMULA (ADVANCED)
+function calculatePNRProbability(status, data) {
+
+  let prob = 50;
+
+  // ✅ CONFIRMED
+  if (status.includes("CNF")) return 100;
+
+  // ✅ RAC
+  if (status.includes("RAC")) prob += 30;
+
+  // ✅ WL LOGIC
+  if (status.includes("WL")) {
+    let match = status.match(/WL(\d+)/);
+    let wl = match ? parseInt(match[1]) : 0;
+
+    prob -= wl * 2;
+  }
+
+  // ✅ QUOTA FACTOR
+  if (status.includes("GNWL")) prob += 10;
+  if (status.includes("PQWL")) prob -= 10;
+  if (status.includes("RLWL")) prob -= 5;
+
+  // ✅ DAYS LEFT FACTOR
+  const today = new Date();
+  const journey = new Date(data.journeyDate);
+  const diff = Math.ceil((journey - today) / (1000 * 60 * 60 * 24));
+
+  if (diff > 15) prob += 15;
+  else if (diff > 7) prob += 8;
+  else if (diff > 3) prob += 3;
+  else prob -= 10;
+
+  // ✅ SEASON FACTOR (SMART)
+  const month = journey.getMonth() + 1;
+
+  // Summer rush
+  if ([4, 5, 6].includes(month)) prob -= 10;
+
+  // Festival rush (Oct-Nov)
+  if ([10, 11].includes(month)) prob -= 15;
+
+  // Low demand months
+  if ([1, 2, 7, 8].includes(month)) prob += 5;
+
+  return Math.max(0, Math.min(100, Math.round(prob)));
 }
