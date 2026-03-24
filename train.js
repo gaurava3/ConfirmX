@@ -57,13 +57,21 @@ async function fetchTrains() {
 
     trains.forEach(train => {
 
-      html += `
-        <div class="card">
-          <h3>${train.trainName} (${train.trainNumber})</h3>
-          <p><b>${train.from.code}</b> → <b>${train.to.code}</b></p>
-          <p>Departure: ${train.departure} | Arrival: ${train.arrival}</p>
-          <p>Duration: ${train.duration}</p>
-      `;
+     let colorClass = "red";
+if (probability > 70) colorClass = "green";
+else if (probability > 40) colorClass = "yellow";
+
+html += `
+  <div class="class-box">
+    <p><b>${cls.class}</b> - ${cls.displayStatus}</p>
+    <p>Fare: ₹${cls.fare}</p>
+    <p>Chance: ${probability}%</p>
+
+    <div class="progress">
+      <div class="progress-bar ${colorClass}" style="width:${probability}%"></div>
+    </div>
+  </div>
+`;
 
       train.classAvailability.forEach(cls => {
 
