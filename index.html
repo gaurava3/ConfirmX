@@ -14,19 +14,19 @@
     <p>Check your ticket confirmation chances</p>
   </header>
 
-  <!-- PNR SECTION -->
+  <!-- ✅ PNR SECTION (YOUR OLD LOGIC WORKS HERE) -->
   <section class="section">
     <h2>PNR Status</h2>
 
     <div class="form-row center">
       <input type="text" id="pnrInput" placeholder="Enter PNR Number">
-      <button id="pnrBtn">Check Now</button>
+      <button onclick="fetchPNR()">Check Now</button>
     </div>
 
-    <div id="pnrResult" class="result-box"></div>
+    <div id="pnrResult"></div>
   </section>
 
-  <!-- TRAIN SECTION -->
+  <!-- ✅ TRAIN SECTION -->
   <section class="section">
     <h2>Check Seat Availability</h2>
 
@@ -38,12 +38,12 @@
       <button id="trainBtn">Search</button>
     </div>
 
-    <div id="trainResult" class="result-box"></div>
+    <div id="trainResult"></div>
   </section>
 
-  <!-- ✅ IMPORTANT: JS FILES -->
-  <script src="script.js"></script>
-  <script src="train.js"></script>
+  <!-- ✅ IMPORTANT -->
+  <script src="script.js"></script> <!-- PNR -->
+  <script src="train.js"></script>  <!-- TRAIN -->
 
 </body>
 </html>
