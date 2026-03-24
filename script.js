@@ -1,226 +1,159 @@
-async function fetchPNR() {
-  let pnr = document.getElementById("pnr").value.trim();
-
-  if (!pnr) {
-    alert("Enter PNR first");
-    return;
-  }
-
-  document.getElementById("result").innerHTML = "Loading...";
-  document.getElementById("message").innerHTML = "";
-
-  try {
-    let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
-      method: "GET",
-      headers: {
-        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
-        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
-      }
-    });
-
-    let data = await res.json();
-    console.log("FULL DATA:", data);
-
-    if (!data || !data.success || !data.data) {
-      showError("Invalid PNR");
-      return;
-    }
-
-    let d = data.data;
-    let passengers = d.passengers;
-
-    if (!passengers || passengers.length === 0) {
-      showError("Passenger data not found");
-      return;
-    }
-
-    let status = passengers[0].currentStatus || "";
-
-    // ======================
-    // 🎯 CONFIRMED / RAC CHECK
-    // ======================
-    if (status.includes("CNF")) {
-      document.getElementById("result").innerHTML = "✅ CONFIRMED";
-      document.getElementById("message").innerHTML =
-        "Your ticket is confirmed.";
-    } 
-    else if (status.includes("RAC")) {
-      document.getElementById("result").innerHTML = "⚠️ RAC";
-      document.getElementById("message").innerHTML =
-        "High chances of confirmation.";
-    } 
-    else {
-      // ======================
-      // 🎯 WL EXTRACTION
-      // ======================
-      let wl = 0;
-      if (status.includes("WL")) {
-        wl = parseInt(status.replace(/\D/g, "")) || 0;
-      }
-
-      // ======================
-      // 🎯 BASE
-      // ======================
-      let maxWL = 200;
-      let base = (maxWL - wl) / maxWL;
-
-      if (wl <= 10) base += 0.15;
-      else if (wl <= 30) base += 0.05;
-      else if (wl > 100) base *= 0.6;
-
-      base = Math.max(0, Math.min(1, base));
-
-      // ======================
-      // 🎯 QUOTA
-      // ======================
-      let quotaFactor = 1;
-      if (status.includes("GNWL")) quotaFactor = 1.2;
-      else if (status.includes("PQWL")) quotaFactor = 0.9;
-      else if (status.includes("RLWL")) quotaFactor = 0.7;
-
-      // ======================
-      // 🎯 CLASS
-      // ======================
-      let classFactor = 1;
-      if (d.class === "SL") classFactor = 1.2;
-      else if (d.class === "3A") classFactor = 1.0;
-      else if (d.class === "2A") classFactor = 0.85;
-      else if (d.class === "1A") classFactor = 0.6;
-
-      // ======================
-      // 🎯 TIME (DAYS LEFT)
-      // ======================
-      let today = new Date();
-      let [day, month, year] = d.journeyDate.split("-");
-      let journeyDate = new Date(`${year}-${month}-${day}`);
-
-      let diffDays = Math.ceil(
-        (journeyDate - today) / (1000 * 60 * 60 * 24)
-      );
-
-      let timeFactor = 1;
-      if (diffDays > 7) timeFactor = 1.1;
-      else if (diffDays >= 4) timeFactor = 1.0;
-      else if (diffDays >= 2) timeFactor = 0.8;
-      else timeFactor = 1.2;
-
-      // ======================
-      // 🎯 SEASON
-      // ======================
-      let currentMonth = today.getMonth() + 1;
-      let seasonFactor = 1;
-
-      if ([4, 5, 6].includes(currentMonth)) seasonFactor = 0.75;
-      else if ([10, 11].includes(currentMonth)) seasonFactor = 0.7;
-
-      // ======================
-      // 🎯 CAPACITY
-      // ======================
-      let capacityFactor = 1;
-      if (d.class === "SL") capacityFactor = 1.2;
-      else if (d.class === "3A") capacityFactor = 1.0;
-      else if (d.class === "2A") capacityFactor = 0.85;
-      else if (d.class === "1A") capacityFactor = 0.6;
-
-      // ======================
-      // 🔥 DEMAND FACTOR (NEW)
-      // ======================
-      let demandFactor = 1;
-
-      if (wl === 0) demandFactor = 1.1;
-      else if (wl <= 20) demandFactor = 1.0;
-      else if (wl <= 50) demandFactor = 0.9;
-      else demandFactor = 0.75;
-
-      // ======================
-      // 🎯 FINAL PROBABILITY
-      // ======================
-      let probability =
-        base *
-        quotaFactor *
-        classFactor *
-        timeFactor *
-        seasonFactor *
-        capacityFactor *
-        demandFactor *
-        100;
-
-      probability = Math.max(0, Math.min(100, probability));
-
-      let label = probability >= 80 ? "High Chance ✅"
-                : probability >= 50 ? "Medium ⚠️"
-                : "Low Chance ❌";
-
-      document.getElementById("result").innerHTML =
-        probability.toFixed(2) + "% - " + label;
-    }
-
-    // ======================
-    // 🚆 TRAIN INFO
-    // ======================
-    document.getElementById("trainInfo").innerHTML = `
-      <h3>🚆 Train Info</h3>
-      <p><b>${d.trainName}</b> (${d.trainNumber})</p>
-      <p>🚉 ${d.source || "-"} → ${d.destination || "-"}</p>
-      <p>Departure: ${d.departureTime || "-"}</p>
-      <p>Arrival: ${d.arrivalTime || "-"}</p>
-      <p>Duration: ${d.duration || "-"}</p>
-      <p>Class: ${d.class || "-"}</p>
-    `;
-
-    // ======================
-    // 👤 PASSENGER INFO (MULTIPLE)
-    // ======================
-    let passengerHTML = "<h3>👤 Passenger</h3>";
-
-    if (passengers.length === 1) {
-      let p = passengers[0];
-      passengerHTML += `
-        <p>${p.currentStatus} (${p.coach}-${p.berth})</p>
-      `;
-    } else {
-      let allSameCoach = passengers.every(p => p.coach === passengers[0].coach);
-
-      if (allSameCoach) {
-        let coach = passengers[0].coach;
-        let berths = passengers.map(p => p.berth).join(" / ");
-        let status = passengers[0].currentStatus.split(" ")[0];
-
-        passengerHTML += `<p><b>${status} ${coach}</b> → ${berths}</p>`;
-      } else {
-        passengers.forEach((p, i) => {
-          passengerHTML += `<p>P${i + 1}: ${p.currentStatus} (${p.coach}-${p.berth})</p>`;
-        });
-      }
-    }
-
-    document.getElementById("passengerInfo").innerHTML = passengerHTML;
-
-    // ======================
-    // 📊 EXTRA INFO
-    // ======================
-    document.getElementById("extraInfo").innerHTML = `
-      <h3>📊 Extra Info</h3>
-      <p>Fare: ₹${d.fare?.ticketFare || "-"}</p>
-      <p>Chart Prepared: ${d.chartPrepared ? "Yes" : "No"}</p>
-      <p>Train Status: ${d.trainStatus || "-"}</p>
-      <p>Cancelled: ${d.isCancelled ? "Yes" : "No"}</p>
-      <p>Food Rating: ${d.ratings?.food || "-"}</p>
-      <p>Cleanliness: ${d.ratings?.cleanliness || "-"}</p>
-      <p>Overall Rating: ${d.ratings?.overall || "-"}</p>
-      <p>Pantry: ${d.hasPantry ? "Yes" : "No"}</p>
-    `;
-
-  } catch (error) {
-    console.error(error);
-    showError("Failed to fetch PNR data");
-  }
+/* GLOBAL */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: white;
 }
 
-// ======================
-// ❌ ERROR HANDLER
-// ======================
-function showError(msg) {
-  document.getElementById("result").innerHTML = msg;
-  document.getElementById("message").innerHTML = "";
+/* NAVBAR */
+.navbar {
+  padding: 20px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 50px 20px;
+}
+
+.hero h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  color: #94a3b8;
+}
+
+/* CONTAINER */
+.container {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+/* GLASS CARD */
+.card-glass {
+  background: rgba(255,255,255,0.05);
+  border-radius: 18px;
+  padding: 25px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* FORM */
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.form-row.center {
+  justify-content: center;
+}
+
+input {
+  flex: 1;
+  min-width: 150px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 14px;
+}
+
+input::placeholder {
+  color: #94a3b8;
+}
+
+/* BUTTON */
+button {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  padding: 14px 20px;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: bold;
+}
+
+button:hover {
+  transform: scale(1.07);
+  box-shadow: 0 0 20px rgba(34,197,94,0.6);
+}
+
+/* TRAIN CARD */
+.card {
+  background: rgba(255,255,255,0.07);
+  padding: 20px;
+  border-radius: 14px;
+  margin-top: 20px;
+  transition: 0.3s;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+}
+
+/* BEST TRAIN */
+.best-train {
+  border: 2px solid #22c55e;
+  box-shadow: 0 0 20px rgba(34,197,94,0.5);
+}
+
+/* CLASS BOX */
+.class-box {
+  background: rgba(255,255,255,0.1);
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 10px;
+}
+
+/* PROGRESS BAR */
+.progress {
+  height: 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 10px;
+}
+
+/* COLORS */
+.green { background: #22c55e; }
+.yellow { background: #eab308; }
+.red { background: #ef4444; }
+
+/* RESULT SPACING */
+#trainResult {
+  margin-top: 20px;
+}
+
+/* MOBILE */
+@media(max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
 }
