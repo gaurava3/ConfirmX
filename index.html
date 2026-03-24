@@ -39,13 +39,14 @@
     <div class="card-glass">
       <h2>🚆 Check Seat Availability</h2>
 
-      <div class="form-row">
-        <input type="text" id="source" placeholder="From (NDLS)">
-        <input type="text" id="destination" placeholder="To (GKP)">
-        <input type="date" id="date">
-        <input type="text" id="trainNumber" placeholder="Train Number (Optional)">
-      <button onclick="fetchTrain()">Search</button>
-      </div>
+     <div class="form-grid">
+  <input id="source" placeholder="Source (e.g. NDLS)">
+  <input id="destination" placeholder="Destination (e.g. GKP)">
+  <input type="date" id="date">
+  <input id="trainNumber" placeholder="Train Number (Optional)">
+</div>
+
+<button onclick="fetchTrain()">Search</button>
 
       <div id="trainResult"></div>
     </div>
