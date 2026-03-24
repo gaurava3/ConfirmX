@@ -1,65 +1,84 @@
 body {
-  font-family: Arial;
-  background: linear-gradient(135deg, #020617, #0f172a);
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
   color: white;
-  text-align: center;
 }
 
-.container {
-  margin-top: 60px;
+/* HEADER */
+.header {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.header h1 {
+  font-size: 32px;
+  margin: 0;
+}
+
+.header p {
+  color: #9ca3af;
+}
+
+/* SECTION */
+.section {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.section h2 {
+  margin-bottom: 20px;
+}
+
+/* FORM */
+.form-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.form-row.center {
+  justify-content: center;
 }
 
 input {
   padding: 12px;
-  width: 260px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
-  margin: 10px;
-  outline: none;
+  flex: 1;
+  min-width: 150px;
 }
 
 button {
-  padding: 12px 20px;
   background: #22c55e;
-  border: none;
-  border-radius: 10px;
   color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
 }
 
 button:hover {
   background: #16a34a;
 }
 
-.card {
-  margin: 20px auto;
-  padding: 15px;
-  width: 90%;
-  max-width: 400px;
-  background: #111827;
-  border-radius: 12px;
-  text-align: left;
-}
-.section-box {
-  margin-top: 30px;
-  padding: 20px;
-  background: #1e293b;
-  border-radius: 10px;
+/* RESULT BOX */
+.result-box {
+  margin-top: 20px;
 }
 
-#trainResult .card {
-  margin-top: 15px;
+/* CARD */
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
 .class-box {
-  margin-top: 10px;
+  background: #334155;
   padding: 10px;
-  background: #0f172a;
+  margin-top: 10px;
   border-radius: 8px;
-}
-
-#result {
-  font-size: 26px;
-  margin-top: 20px;
 }
