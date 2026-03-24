@@ -1,4 +1,12 @@
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("trainBtn");
 
+    if (btn) {
+        btn.addEventListener("click", fetchTrain);
+    } else {
+        console.error("Button not found");
+    }
+});
 
 async function fetchTrain() {
 
