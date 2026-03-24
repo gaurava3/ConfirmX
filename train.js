@@ -1,7 +1,4 @@
-// Wait for DOM
-document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("fetchTrain").addEventListener("click", fetchTrain);
-});
+
 
 async function fetchTrain() {
 
