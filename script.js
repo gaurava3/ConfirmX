@@ -42,7 +42,7 @@ window.fetchPNR = async function () {
         <p><b>${d.source}</b> → <b>${d.destination}</b></p>
         <p>Departure: ${d.departureTime} | Arrival: ${d.arrivalTime}</p>
        <p>Class: ${d?.class ?? "N/A"}</p>
-    `;
+    ` <p> Accurate confirmation chances using smart prediction</p> ;
 
     // ✅ PASSENGERS LOOP
     let totalProb = 0;
