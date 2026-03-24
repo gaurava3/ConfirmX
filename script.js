@@ -91,48 +91,161 @@ window.fetchPNR = async function () {
 // 🔥 YOUR FORMULA (ADVANCED)
 function calculatePNRProbability(status, data) {
 
-  let prob = 50;
-
-  // ✅ CONFIRMED
+  // ================================
+  // ✅ DIRECT CASES
+  // ================================
   if (status.includes("CNF")) return 100;
+  if (status.includes("RAC")) return 90;
 
-  // ✅ RAC
-  if (status.includes("RAC")) prob += 30;
+  // ================================
+  // 🔍 EXTRACT WL (CORRECT WAY)
+  // ================================
+  let wlMatch = status.split("/").pop().match(/WL(\d+)/);
+  let wl = wlMatch ? parseInt(wlMatch[1]) : 0;
 
-  // ✅ WL LOGIC
-  if (status.includes("WL")) {
-    let match = status.match(/WL(\d+)/);
-    let wl = match ? parseInt(match[1]) : 0;
+  let prob = 0;
 
-    prob -= wl * 2;
-  }
+  // ================================
+  // 🔥 1. WL BASE (MAIN FACTOR)
+  // ================================
+  if (wl <= 5) prob = 92;
+  else if (wl <= 10) prob = 85;
+  else if (wl <= 20) prob = 70;
+  else if (wl <= 40) prob = 50;
+  else prob = 25;
 
-  // ✅ QUOTA FACTOR
-  if (status.includes("GNWL")) prob += 10;
-  if (status.includes("PQWL")) prob -= 10;
+  // ================================
+  // ⚖️ 2. QUOTA
+  // ================================
+  if (status.includes("GNWL")) prob += 5;
   if (status.includes("RLWL")) prob -= 5;
+  if (status.includes("PQWL")) prob -= 8;
 
-  // ✅ DAYS LEFT FACTOR
+  // ================================
+  // 📅 3. DAYS LEFT
+  // ================================
   const today = new Date();
   const journey = new Date(data.journeyDate);
   const diff = Math.ceil((journey - today) / (1000 * 60 * 60 * 24));
 
-  if (diff > 15) prob += 15;
-  else if (diff > 7) prob += 8;
-  else if (diff > 3) prob += 3;
+  if (diff > 15) prob += 5;
+  else if (diff > 7) prob += 3;
+  else if (diff > 3) prob += 2;
   else prob -= 10;
 
-  // ✅ SEASON FACTOR (SMART)
+  // ================================
+  // 🌤️ 4. SEASON
+  // ================================
   const month = journey.getMonth() + 1;
 
-  // Summer rush
-  if ([4, 5, 6].includes(month)) prob -= 10;
+  if ([10, 11].includes(month)) prob -= 10; // festival
+  else if ([4, 5, 6].includes(month)) prob -= 6; // summer
+  else if ([1, 2, 7, 8].includes(month)) prob += 3; // low demand
 
-  // Festival rush (Oct-Nov)
-  if ([10, 11].includes(month)) prob -= 15;
+  // ================================
+  // 🚆 5. ROUTE DEMAND (SMART)
+  // ================================
+  const source = (data.source || "").toUpperCase();
+  const dest = (data.destination || "").toUpperCase();
+  const routeText = source + " " + dest;
 
-  // Low demand months
-  if ([1, 2, 7, 8].includes(month)) prob += 5;
+  const highDemandCities = [
+    "DELHI", "NDLS", "DLI",
+    "GORAKHPUR", "GKP",
+    "VARANASI", "BSB",
+    "PATNA", "PNBE",
+    "KOLKATA", "HWH",
+    "MUMBAI", "CSMT", "LTT", "BANDRA",
+    "SURAT",
+    "AHMEDABAD", "ADI",
+    "LUCKNOW", "LKO"
+  ];
+
+  let demandScore = 0;
+  highDemandCities.forEach(city => {
+    if (routeText.includes(city)) demandScore++;
+  });
+
+  if (demandScore >= 2) prob -= 8;
+  else if (demandScore === 1) prob -= 4;
+
+  // ================================
+  // 🚄 6. TRAIN POPULARITY
+  // ================================
+  const trainName = (data.trainName || "").toUpperCase();
+
+  if (
+    trainName.includes("RAJDHANI") ||
+    trainName.includes("RJDH") ||
+    trainName.includes("DURONTO") ||
+    trainName.includes("DRNT")
+  ) prob -= 8;
+
+  if (
+    trainName.includes("SUPERFAST") ||
+    trainName.includes("SF") ||
+    trainName.includes("EXP") ||
+    trainName.includes("EXPRESS")
+  ) prob -= 4;
+
+  if (
+    trainName.includes("GARIB RATH") ||
+    trainName.includes("GR")
+  ) prob -= 6;
+
+  if (
+    trainName.includes("SPECIAL") ||
+    trainName.includes("SPL")
+  ) prob += 3;
+
+  // ================================
+  // ⚡ 7. TATKAL EFFECT
+  // ================================
+  if (diff <= 2) prob -= 10;
+
+  // ================================
+  // 🧾 8. CHART PREPARED
+  // ================================
+  if (data.chartPrepared === true) {
+    prob -= 15;
+  }
+
+  // ================================
+  // 📏 9. DISTANCE FACTOR
+  // ================================
+  const distance = data.distance || 0;
+
+  if (distance < 200) prob -= 8;        // short route → less cancellations
+  else if (distance < 500) prob -= 3;
+  else if (distance > 1000) prob += 5;  // long route → more cancellations
+
+  // ================================
+  // 📆 10. WEEKLY vs DAILY TRAIN
+  // ================================
+  const runningDays = (data.runningDays || "").toUpperCase();
+
+  const daysCount = runningDays.split(",").length;
+
+  if (daysCount <= 2) prob -= 8;   // weekly
+  else if (daysCount <= 4) prob -= 4;
+  else prob += 3;                  // daily trains
+
+  // ================================
+  // 🛏️ 11. CLASS BASED ADJUSTMENT
+  // ================================
+  const travelClass = (data.journeyClass || "").toUpperCase();
+
+  if (travelClass.includes("1A")) prob -= 10;
+  else if (travelClass.includes("2A")) prob -= 6;
+  else if (travelClass.includes("3A")) prob -= 3;
+  else if (travelClass.includes("SL")) prob += 5;
+  else if (travelClass.includes("2S")) prob += 8;
+
+  // ================================
+  // 🔒 12. SAFETY CONTROL
+  // ================================
+  if (wl <= 10 && prob < 60) prob = 60;
+  if (wl <= 5 && prob < 75) prob = 75;
 
   return Math.max(0, Math.min(100, Math.round(prob)));
 }
