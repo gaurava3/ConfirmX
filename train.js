@@ -1,17 +1,5 @@
 // ================================
-// 🚀 BUTTON EVENT (SAFE)
-// ================================
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("trainBtn");
-  if (btn) {
-    btn.addEventListener("click", fetchTrain);
-  } else {
-    console.error("trainBtn not found");
-  }
-});
-
-// ================================
-// 🚆 FETCH TRAIN DATA
+// 🌐 GLOBAL FUNCTION (IMPORTANT)
 // ================================
 window.fetchTrain = async function () {
 
@@ -29,6 +17,7 @@ window.fetchTrain = async function () {
     return;
   }
 
+  // 📅 FORMAT DATE → DD-MM-YYYY
   const [year, month, day] = dateInput.split("-");
   const formattedDate = `${day}-${month}-${year}`;
 
@@ -50,13 +39,13 @@ window.fetchTrain = async function () {
     console.log("API DATA:", data);
 
     if (!data || !data.success || !Array.isArray(data.data)) {
-      resultBox.innerHTML = "Invalid data";
+      resultBox.innerHTML = "Invalid API response";
       return;
     }
 
     let trains = data.data;
 
-    // 🔍 FILTER BY TRAIN NUMBER
+    // 🔍 Optional train filter
     if (trainNumber) {
       trains = trains.filter(t => t.trainNumber === trainNumber);
     }
@@ -69,7 +58,7 @@ window.fetchTrain = async function () {
     let html = "";
 
     // ================================
-    // 🔥 RENDER TRAINS
+    // 🚆 RENDER TRAINS
     // ================================
     trains.forEach(train => {
 
@@ -85,57 +74,53 @@ window.fetchTrain = async function () {
 
         train.classAvailability.forEach(cls => {
 
-          // ================================
-          // 🔥 NORMALIZE STATUS
-          // ================================
-         let rawStatus = cls.availability.toUpperCase();
-let probability = 0;
+          let rawStatus = (cls.availability || "").toUpperCase();
+          let probability = 0;
 
-// ================================
-// 🚨 HARD BLOCK CASES (VERY IMPORTANT)
-// ================================
-if (
-  rawStatus.includes("REGRET") ||
-  rawStatus.includes("NOT AVAILABLE") ||
-  rawStatus.includes("TRAIN CANCELLED")
-) {
-  probability = 0;
-} 
-
-else if (rawStatus.includes("AVAILABLE") || rawStatus.includes("CURR_AVBL")) {
-  probability = 100;
-} 
-
-else if (rawStatus.includes("RAC")) {
-  probability = 100;
-} 
-
-else {
-  // WL CASE → USE YOUR FORMULA
-  probability = calculatePNRProbability(rawStatus, {
-    source: train.from.name,
-    destination: train.to.name,
-    trainName: train.trainName,
-    distance: train.distanceKm,
-    runningDays: train.runningDays,
-    journeyDate: dateInput,
-    journeyClass: cls.class,
-    chartPrepared: false
-  });
-}
           // ================================
-          // 🔥 YOUR FORMULA USED HERE
+          // 🚨 HARD CONDITIONS
           // ================================
-          let probability = calculatePNRProbability(status, {
-            source: train.from.name,
-            destination: train.to.name,
-            trainName: train.trainName,
-            distance: train.distanceKm,
-            runningDays: train.runningDays,
-            journeyDate: dateInput,
-            journeyClass: cls.class,
-            chartPrepared: false
-          });
+          if (
+            rawStatus.includes("REGRET") ||
+            rawStatus.includes("NOT AVAILABLE") ||
+            rawStatus.includes("TRAIN CANCELLED")
+          ) {
+            probability = 0;
+          }
+
+          else if (
+            rawStatus.includes("AVAILABLE") ||
+            rawStatus.includes("CURR_AVBL")
+          ) {
+            probability = 100;
+          }
+
+          else if (rawStatus.includes("RAC")) {
+            probability = 90;
+          }
+
+          else {
+            // 🔥 WL → USE YOUR ENGINE
+            probability = calculatePNRProbability(rawStatus, {
+              source: train.from.name,
+              destination: train.to.name,
+              trainName: train.trainName,
+              distance: train.distanceKm,
+              runningDays: train.runningDays,
+              journeyDate: dateInput,
+              journeyClass: cls.class,
+              chartPrepared: false
+            });
+          }
+
+          // ⚡ LAST MOMENT REDUCTION
+          const today = new Date();
+          const journey = new Date(dateInput);
+          const diff = Math.ceil((journey - today) / (1000 * 60 * 60 * 24));
+
+          if (diff <= 1 && probability > 0) {
+            probability = Math.min(probability, 60);
+          }
 
           html += `
             <div class="class-box">
@@ -156,10 +141,10 @@ else {
     resultBox.innerHTML = html;
 
   } catch (err) {
-    console.error(err);
+    console.error("ERROR:", err);
     resultBox.innerHTML = "Error fetching data";
   }
-}
+};
 
 // ================================
 // 🧠 FINAL PREDICTION ENGINE
@@ -226,7 +211,7 @@ function calculatePNRProbability(status, data) {
   if (name.includes("GARIB RATH")) prob -= 6;
   if (name.includes("SPECIAL") || name.includes("SPL")) prob += 3;
 
-  // ⚡ TATKAL EFFECT
+  // ⚡ TATKAL
   if (diff <= 2) prob -= 10;
 
   // 📏 DISTANCE
