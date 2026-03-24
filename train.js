@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("trainBtn").addEventListener("click", fetchTrains);
 });
 
-async function fetchTrains() {
+async function fetchTrain() {
 
   const source = document.getElementById("source").value.trim().toUpperCase();
   const destination = document.getElementById("destination").value.trim().toUpperCase();
@@ -17,38 +17,37 @@ async function fetchTrains() {
     return;
   }
 
-  // ✅ DATE FIX
   const [year, month, day] = dateInput.split("-");
   const formattedDate = `${day}-${month}-${year}`;
 
   resultBox.innerHTML = "Loading...";
 
   try {
-    // ✅ YOUR ORIGINAL API (UNCHANGED)
     const res = await fetch(`https://irctc-api2.p.rapidapi.com/trainAvailability?source=${source}&destination=${destination}&date=${formattedDate}`, {
       method: "GET",
       headers: {
-        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
+        "X-RapidAPI-Key": "YOUR_API_KEY",
         "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
       }
     });
 
     const data = await res.json();
-    console.log("API:", data);
+    console.log("API DATA:", data);
 
-    if (!data.success) {
-      resultBox.innerHTML = "Invalid input";
+    // ✅ SAFE CHECK
+    if (!data || !data.success || !Array.isArray(data.data)) {
+      resultBox.innerHTML = "Invalid data from API";
       return;
     }
 
     let trains = data.data;
 
-    // ✅ FILTER TRAIN NUMBER
+    // ✅ FILTER BY TRAIN NUMBER (OPTIONAL)
     if (trainNumber) {
       trains = trains.filter(t => t.trainNumber === trainNumber);
     }
 
-    if (!trains.length) {
+    if (trains.length === 0) {
       resultBox.innerHTML = "No trains found";
       return;
     }
@@ -57,46 +56,52 @@ async function fetchTrains() {
 
     trains.forEach(train => {
 
-     let colorClass = "red";
-if (probability > 70) colorClass = "green";
-else if (probability > 40) colorClass = "yellow";
+      html += `
+        <div class="card">
+          <h3>${train.trainName} (${train.trainNumber})</h3>
+          <p><b>${train.from.code}</b> → <b>${train.to.code}</b></p>
+          <p>Departure: ${train.departure} | Arrival: ${train.arrival}</p>
+          <p>Duration: ${train.duration}</p>
+      `;
 
-html += `
-  <div class="class-box">
-    <p><b>${cls.class}</b> - ${cls.displayStatus}</p>
-    <p>Fare: ₹${cls.fare}</p>
-    <p>Chance: ${probability}%</p>
+      // ✅ VERY IMPORTANT FIX
+      if (Array.isArray(train.classAvailability)) {
 
-    <div class="progress">
-      <div class="progress-bar ${colorClass}" style="width:${probability}%"></div>
-    </div>
-  </div>
-`;
+        train.classAvailability.forEach(cls => {
 
-      train.classAvailability.forEach(cls => {
+          let probability = calculateTrainProbability(cls, {
+            source: train.from.name,
+            destination: train.to.name,
+            trainName: train.trainName,
+            distance: train.distanceKm,
+            runningDays: train.runningDays,
+            journeyDate: dateInput,
+            journeyClass: cls.class
+          });
 
-        let probability = calculateTrainProbability(cls, dateInput);
+          html += `
+            <div class="class-box">
+              <p><b>${cls.class}</b> - ${cls.displayStatus}</p>
+              <p>Fare: ₹${cls.fare}</p>
+              <p>Chance: ${probability}%</p>
+            </div>
+          `;
+        });
 
-        html += `
-          <div class="class-box">
-            <p><b>${cls.class}</b> - ${cls.displayStatus}</p>
-            <p>Fare: ₹${cls.fare}</p>
-            <p>Chance: ${probability}%</p>
-          </div>
-        `;
-      });
+      } else {
+        html += `<p>No class data available</p>`;
+      }
 
       html += `</div>`;
     });
 
     resultBox.innerHTML = html;
 
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     resultBox.innerHTML = "Error fetching data";
   }
 }
-
 
 // ✅ YOUR LOGIC (UNCHANGED BUT SAFE)
 function calculateTrainProbability(cls, journeyDate) {
