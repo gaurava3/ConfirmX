@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ================================
 // 🚆 FETCH TRAIN DATA
 // ================================
-async function fetchTrain() {
+window.fetchTrain = async function () {
 
   console.log("Search clicked ✅");
 
