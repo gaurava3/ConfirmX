@@ -1,9 +1,10 @@
-
-     
-   
-document.getElementById("trainBtn").addEventListener("click", fetchTrains);
+// Wait for DOM
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("trainBtn").addEventListener("click", fetchTrains);
+});
 
 async function fetchTrains() {
+
   const source = document.getElementById("source").value.trim().toUpperCase();
   const destination = document.getElementById("destination").value.trim().toUpperCase();
   const dateInput = document.getElementById("date").value;
@@ -16,13 +17,16 @@ async function fetchTrains() {
     return;
   }
 
+  // ✅ DATE FIX
   const [year, month, day] = dateInput.split("-");
   const formattedDate = `${day}-${month}-${year}`;
 
   resultBox.innerHTML = "Loading...";
 
   try {
+    // ✅ YOUR ORIGINAL API (UNCHANGED)
     const res = await fetch(`https://irctc-api2.p.rapidapi.com/trainAvailability?source=${source}&destination=${destination}&date=${formattedDate}`, {
+      method: "GET",
       headers: {
         "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
         "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
@@ -30,7 +34,7 @@ async function fetchTrains() {
     });
 
     const data = await res.json();
-    console.log(data);
+    console.log("API:", data);
 
     if (!data.success) {
       resultBox.innerHTML = "Invalid input";
@@ -39,6 +43,7 @@ async function fetchTrains() {
 
     let trains = data.data;
 
+    // ✅ FILTER TRAIN NUMBER
     if (trainNumber) {
       trains = trains.filter(t => t.trainNumber === trainNumber);
     }
@@ -51,22 +56,24 @@ async function fetchTrains() {
     let html = "";
 
     trains.forEach(train => {
+
       html += `
         <div class="card">
           <h3>${train.trainName} (${train.trainNumber})</h3>
-          <p>${train.from.code} → ${train.to.code}</p>
-          <p>${train.departure} → ${train.arrival}</p>
+          <p><b>${train.from.code}</b> → <b>${train.to.code}</b></p>
+          <p>Departure: ${train.departure} | Arrival: ${train.arrival}</p>
           <p>Duration: ${train.duration}</p>
       `;
 
       train.classAvailability.forEach(cls => {
-        const prob = calculateTrainProbability(cls, dateInput);
+
+        let probability = calculateTrainProbability(cls, dateInput);
 
         html += `
           <div class="class-box">
             <p><b>${cls.class}</b> - ${cls.displayStatus}</p>
             <p>Fare: ₹${cls.fare}</p>
-            <p>Chance: ${prob}%</p>
+            <p>Chance: ${probability}%</p>
           </div>
         `;
       });
@@ -76,14 +83,14 @@ async function fetchTrains() {
 
     resultBox.innerHTML = html;
 
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
     resultBox.innerHTML = "Error fetching data";
   }
 }
 
 
-// 🔥 YOUR FORMULA
+// ✅ YOUR LOGIC (UNCHANGED BUT SAFE)
 function calculateTrainProbability(cls, journeyDate) {
   let prob = 50;
 
