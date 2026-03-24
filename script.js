@@ -41,7 +41,7 @@ window.fetchPNR = async function () {
         <h3>${d.trainName} (${d.trainNumber})</h3>
         <p><b>${d.source}</b> → <b>${d.destination}</b></p>
         <p>Departure: ${d.departureTime} | Arrival: ${d.arrivalTime}</p>
-        <p>Class: ${d.journeyClass}</p>
+        <p>Class: ${d.class}</p>
     `;
 
     // ✅ PASSENGERS LOOP
