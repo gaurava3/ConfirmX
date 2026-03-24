@@ -88,14 +88,41 @@ async function fetchTrain() {
           // ================================
           // 🔥 NORMALIZE STATUS
           // ================================
-          let status = cls.availability;
+         let rawStatus = cls.availability.toUpperCase();
+let probability = 0;
 
-          if (status.includes("AVAILABLE") || status.includes("CURR_AVBL")) {
-            status = "CNF";
-          } else if (status.includes("RAC")) {
-            status = "RAC";
-          }
+// ================================
+// 🚨 HARD BLOCK CASES (VERY IMPORTANT)
+// ================================
+if (
+  rawStatus.includes("REGRET") ||
+  rawStatus.includes("NOT AVAILABLE") ||
+  rawStatus.includes("TRAIN CANCELLED")
+) {
+  probability = 0;
+} 
 
+else if (rawStatus.includes("AVAILABLE") || rawStatus.includes("CURR_AVBL")) {
+  probability = 100;
+} 
+
+else if (rawStatus.includes("RAC")) {
+  probability = 100;
+} 
+
+else {
+  // WL CASE → USE YOUR FORMULA
+  probability = calculatePNRProbability(rawStatus, {
+    source: train.from.name,
+    destination: train.to.name,
+    trainName: train.trainName,
+    distance: train.distanceKm,
+    runningDays: train.runningDays,
+    journeyDate: dateInput,
+    journeyClass: cls.class,
+    chartPrepared: false
+  });
+}
           // ================================
           // 🔥 YOUR FORMULA USED HERE
           // ================================
