@@ -24,13 +24,9 @@ window.fetchTrain = async function () {
   resultBox.innerHTML = "Loading...";
 
   try {
-    const res = await fetch(
-      `fetch(`https://broken-shadow-d1e4.freedekholive-577.workers.dev?source=${source}&destination=${destination}&date=${formattedDate}&key=CONFIRMX_SECURE_123`)`,
-      {
-
-       
-      }
-    );
+   const res = await fetch(
+  `https://broken-shadow-d1e4.freedekholive-577.workers.dev?source=${source}&destination=${destination}&date=${formattedDate}&key=CONFIRMX_SECURE_123`
+);
 
     const data = await res.json();
     console.log("API DATA:", data);
