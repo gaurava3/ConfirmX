@@ -1,4 +1,9 @@
 // ✅ MAKE FUNCTION GLOBAL (IMPORTANT)
+async function getToken() {
+  const res = await fetch("https://confirmxpnr.freedekholive-577.workers.dev/token");
+  const data = await res.json();
+  return data.token;
+}
 window.fetchPNR = async function () {
 
   console.log("🔥 PNR Button Clicked");
@@ -17,13 +22,16 @@ window.fetchPNR = async function () {
   try {
 
     // ✅ YOUR API (UNCHANGED)
-    let res = await fetch(`https://irctc-api2.p.rapidapi.com/pnrStatus?pnr=${pnr}`, {
-      method: "GET",
-      headers: {
-        "X-RapidAPI-Key": "0c6c90110dmsh6de04f6f6414cdcp1dbe9ajsn7ceb30948902",
-        "X-RapidAPI-Host": "irctc-api2.p.rapidapi.com"
-      }
-    });
+    const token = await getToken();
+
+let res = await fetch(
+  `https://confirmxpnr.freedekholive-577.workers.dev?pnr=${pnr}`,
+  {
+    headers: {
+      "x-token": token
+    }
+  }
+);
 
     let data = await res.json();
     console.log("FULL DATA:", data);
