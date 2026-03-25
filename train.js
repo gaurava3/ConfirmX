@@ -1,6 +1,11 @@
 // ================================
 // 🌐 GLOBAL FUNCTION (IMPORTANT)
 // ================================
+async function getToken() {
+  const res = await fetch("https://broken-shadow-d1e4.freedekholive-577.workers.dev/token");
+  const data = await res.json();
+  return data.token;
+}
 window.fetchTrain = async function () {
 
   console.log("Search clicked ✅");
@@ -24,10 +29,16 @@ window.fetchTrain = async function () {
   resultBox.innerHTML = "Loading...";
 
   try {
-   const res = await fetch(
-  `https://broken-shadow-d1e4.freedekholive-577.workers.dev?source=${source}&destination=${destination}&date=${formattedDate}&key=CONFIRMX_SECURE_123`
-);
+  const token = await getToken();
 
+const res = await fetch(
+  `https://broken-shadow-d1e4.freedekholive-577.workers.dev?source=${source}&destination=${destination}&date=${formattedDate}`,
+  {
+    headers: {
+      "x-token": token
+    }
+  }
+);
     const data = await res.json();
     console.log("API DATA:", data);
 
